@@ -1,0 +1,1 @@
+# aws-demo-textract-receipts
