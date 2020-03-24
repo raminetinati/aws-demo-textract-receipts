@@ -90,6 +90,17 @@ def inspect_dataset(textract_data):
     
     print('Total Records {}'.format(len(textract_data)))
     
+def preprocess_text(text):
+    
+    processed_text = text.lower().strip().replace(',','').replace(':',''). \
+                    replace('?','').replace('000','').replace('>','').replace('<','').replace('!',''). \
+                    replace(')','').replace('(','').replace('#','')
+    
+    #we have some oddities
+    processed_text =  ' '.join(i for i in processed_text.split(' ') if not i.endswith('pm'))
+    processed_text  = ' '.join(i for i in processed_text.split(' ') if not i.endswith('am'))
+    
+    return processed_text
     
 def visualize_detection(image_path, bounding_boxes):
 
