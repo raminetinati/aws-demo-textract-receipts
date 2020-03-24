@@ -161,8 +161,20 @@ nltk_tagged_tokens = nltk.pos_tag(tokens)
 Using the above code snipping on a string `This sentence has been processed by NLTK Part of Speech Tagger`, produces an output such as:
 
 ```json
-[("This", "DT"), ("sentence", "NN"), ("has", "VBZ"), ("been", "VBN"), ("processed", "VBN"), ("by", "IN"), ("NLTK", "NNP"), ("Part", "NNP"), ("of", "IN"), ("Speech", "NNP"), ("Tagger", "NNP")]
+[["This", "DT"], ["sentence", "NN"], ["has", "VBZ"], ["been", "VBN"], ["processed", "VBN"], ["by", "IN"], ["NLTK", "NNP"], ["Part", "NNP"], ["of", "IN"], ["Speech", "NNP"], ["Tagger", "NNP"]]
 ```
+In just two lines of code we now have tags for each of the words identified in the image. Similarly, we can apply spaCy to extract recogized entities, with the above string, we would be returned the following:
+
+```json
+[["NLTK", "ORG"], ["Speech Tagger"], "PRODUCT"]
+```
+
+Based on these results, we can then start to bag our terms into different categories, and start to apply simple processing to the results, based on their tags. For instance, when we identify dates or cardinal values, we can then add some conditional statements, and based on some assumptions), select a value which could represent the total value of the bill, or the date of the transaction. Again, several assumptions are made at this step; take for instance the variable `max_value`, which is used to denote the maximum value found on the receipt. After a few stages of pre-processing and sanity checking, e.g. removing numbers such as barcodes, we take the maximum value as the bill value, however this can be problematic, as some receipts maximum value actually represent the cash which was given to pay the bill, e.g. 20 USD, where as the actual bill total was only 15.99 USD.
+
+
+Acknowledging these limitations in our pre-processing and enrichment stages, we're able to proceed to now analyse and fuerther enhance our data in order to use it for other purposes.
+
+
 
 
 
