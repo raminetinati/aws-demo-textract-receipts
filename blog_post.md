@@ -166,7 +166,7 @@ Using the above code snipping on a string `This sentence has been processed by N
 In just two lines of code we now have tags for each of the words identified in the image. Similarly, we can apply spaCy to extract recogized entities, with the above string, we would be returned the following:
 
 ```json
-[["NLTK", "ORG"], ["Speech Tagger"], "PRODUCT"]
+[["NLTK", "ORG"], ["Speech Tagger", "PRODUCT"]]
 ```
 
 Based on these results, we can then start to bag our terms into different categories, and start to apply simple processing to the results, based on their tags. For instance, when we identify dates or cardinal values, we can then add some conditional statements, and based on some assumptions), select a value which could represent the total value of the bill, or the date of the transaction. Again, several assumptions are made at this step; take for instance the variable `max_value`, which is used to denote the maximum value found on the receipt. After a few stages of pre-processing and sanity checking, e.g. removing numbers such as barcodes, we take the maximum value as the bill value, however this can be problematic, as some receipts maximum value actually represent the cash which was given to pay the bill, e.g. 20 USD, where as the actual bill total was only 15.99 USD.
@@ -174,6 +174,43 @@ Based on these results, we can then start to bag our terms into different catego
 
 Acknowledging these limitations in our pre-processing and enrichment stages, we're able to proceed to now analyse and fuerther enhance our data in order to use it for other purposes.
 
+
+#### Boundary Box Analysis
+
+Visual inspection is a great tool to examine the output of Amazon Textract, and whilst you cannot do this at scale (e.g. all receipt images), being able to inspect the OCR results, especially when the confidence levels are low, is important. It's also good practice when performing data exploration and analysis to at some point in the process (earlier the better) to visually inspect the results of the processing, whether this be for text, images, or video.
+
+
+#### Basic Analysis of Enriched Records
+
+One of the most basic steps we can do to understand the results of our OCR process, is to examine both the data at the Micro (e.g. at the level of each record), and at the Macro (e.g. the dataset as a whole). For each the Micro and Macro, we need to apply different instruments of analysis, and both will provide different insights to how we can use our data.
+
+
+- Macro Level Analysis: This typically involves looking at distributions of records, from the type of tokens we have, measures of skewness, or depending on the domain of the dataset, aspects such as timeseries or PMD plots. For our domain, we will use this exploratory step to understand the type of tokens we're commonly identifying within our dataset, as well as the distribution of confidence scores across our words. This is going to be an iterative process, as what we're aiming to do here is refine our custom dictionary of words that we dont want to include. Whilst it is hard to demonstrate how this iterative process happens, it's important to understand that the words in the ```stop_words_custom.txt``` file was not generated on a single pass, rather, it was an iterative process of viewing common words within the dataset, and based on the context of the data, we can keep or remove the words. A good example of this is the word `Server` or `Waiter`, for this domain (Receipt's data), this is going to be a common term, and for the purpose of our task, does not add value. That being said, if the task was to identify receipts where there was a `Server` or `Waiter` involved, then it would be benifical to keep this term. 
+
+In the ```analyse_records``` method, a series of Macro level inspections on the data are conducted, such as examining the distribution of the confidence scores on the words across all the records, as well as the distribution of max values found, and spread of timestamps.
+
+\Whilst these descriptive stats are quite rough and high-level, they provide some intuition on the processing pipeline we're building, and highlight any major flaws or errors in our steps. Using this visual inspection of the data, we can also refine the dictionary of stop words.
+
+Take for example the output below, we can see that from the top 10 common words, there are perhaps futher processing steps required to ensure that we don't have duplicate terms like `0.00` and `$0.00`, or that we need a more refined approach to select the dates, given that there are only 200 records, and we have 211 dates in our table.
+
+```sh
+Total Non-unique Tokens 7755
+Unique Tokens 4819
+Top 10 Common Tokens ['0.00', 'chicken', '$0.00', '12.00', 'taco', 'coke', 'chees', 'grill', 'shrimp', 'dinner']
+Highest Total Value 827.0 
+Lowest Total Value 0.0 
+Mean Total Value 67.59 
+       max_values
+count  200.000000
+mean    67.592400
+std    103.174735
+min      0.000000
+25%     18.825000
+50%     38.545000
+75%     73.265000
+max    827.000000
+Total Dates Found 211
+```
 
 
 
