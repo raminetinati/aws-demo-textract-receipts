@@ -35,7 +35,7 @@ Without going off on a tangent and never returining, let"s think about the data 
 
 For this demonstration, we"re going to be using a dataset of 200 receipts, which has been made available by [ExpressExpense](https://expressexpense.com/blog/free-receipt-images-ocr-machine-learning-dataset/). The receipts data contains 200 different receipt images, with different backgrounds and types of receipts. This dataset is a great source of input for our solution, as we"re trying to build a processing pipeline with Amazon Textract that can support a wide spectrum of receipt types (e.g. they shouldn"t all come from the same Merchant). An example of the receipts can be seen below.
 
-<RECEIPT IMAGE>
+![Bounding Box Example](img/bounding_box_example)
 
 ### Data Enrichment Tools
 
@@ -298,6 +298,13 @@ Using this approach, we're now able to examine the remaining terms from our diff
 | high_cost   | 58      | 60      | 'asparagu', 'ave', 'avenu', 'beach', 'beef', 'blue', 'blvd', 'brussel', 'burger', 'cab', 'cake', 'chicken', 'chip', 'chop', 'coffe', 'coke', 'custom', 'diet', 'dinner', 'express', 'famili', 'filename', 'fish', 'garlic', 'glass', 'grand', 'grill', 'hous', 'jericho', 'label', 'margarita', 'med', 'mexican', 'new', 'onion', 'onlin', 'open', 'park', 'parti', 'pork', 'qti', 'quesadilla', 'red', 'reg', 'rib', 'rice', 'salad', 'salmon', 'see', 'shrimp', 'side', 'sirloin', 'steak', 'street', 'tea', 'top', 'west', 'white', 'wine', 'york'   |
 | medium_cost | 58      | 70      | 'ave', 'avenu', 'bacon', 'bbq', 'beach', 'beef', 'bread', 'burger', 'cafe', 'cake', 'chees', 'cheeseburg', 'chicken', 'chz', 'close', 'coffe', 'coke', 'combo', 'crab', 'cust', 'day', 'dinner', 'drive', 'fajita', 'filename', 'free', 'french', 'garlic', 'glass', 'grill', 'hamburg', 'hous', 'label', 'larg', 'lunch', 'mac', 'medium', 'mexican', 'new', 'onion', 'open', 'parti', 'pepper', 'pollo', 'ranch', 'red', 'reg', 'rice', 'salad', 'sarah', 'seafood', 'shrimp', 'side', 'small', 'soda', 'soup', 'special', 'spinach', 'steak', 'svrck', 'taco', 'take', 'tea', 'tel', 'tender', 'water', 'well', 'west', 'wing', 'www'   | 
 | low_cost    | 84      | 29     | 'acct', 'american', 'auth', 'beef', 'cafe', 'chees', 'chicken', 'chip', 'close', 'coffe', 'coke', 'drink', 'drive', 'egg', 'filename', 'free', 'french', 'hot', 'label', 'lunch', 'pay', 'purchas', 'roll', 'street', 'taco', 'take', 'tender', 'type', 'wing'    | 
+
+
+From our results, we're seeing some overlap between categories, and with some refining of the parameters, we are able to draw out some unique terms which only appear with each of the different groups, e.g. in the high_cost category, we can unique terms such as `sirloin` and `chop`. We can also use the heatmaps to visualise the correlations between terms to identify within a given category, which terms appear to correlate more strongly with each other (which is a measured by the corresponding 0s or 1s in the matrix).
+
+![Correlation Heatmap](img/corr_matrix_heatmap)
+
+
 
 
 
