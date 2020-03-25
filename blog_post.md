@@ -35,7 +35,7 @@ Without going off on a tangent and never returining, let"s think about the data 
 
 For this demonstration, we"re going to be using a dataset of 200 receipts, which has been made available by [ExpressExpense](https://expressexpense.com/blog/free-receipt-images-ocr-machine-learning-dataset/). The receipts data contains 200 different receipt images, with different backgrounds and types of receipts. This dataset is a great source of input for our solution, as we"re trying to build a processing pipeline with Amazon Textract that can support a wide spectrum of receipt types (e.g. they shouldn"t all come from the same Merchant). An example of the receipts can be seen below.
 
-![Bounding Box Example](img/bounding_box_example)
+![Bounding Box Example](img/bounding_box_example.png)
 
 ### Data Enrichment Tools
 
@@ -302,7 +302,14 @@ Using this approach, we're now able to examine the remaining terms from our diff
 
 From our results, we're seeing some overlap between categories, and with some refining of the parameters, we are able to draw out some unique terms which only appear with each of the different groups, e.g. in the high_cost category, we can unique terms such as `sirloin` and `chop`. We can also use the heatmaps to visualise the correlations between terms to identify within a given category, which terms appear to correlate more strongly with each other (which is a measured by the corresponding 0s or 1s in the matrix).
 
-![Correlation Heatmap](img/corr_matrix_heatmap)
+![Correlation Heatmap](img/corr_matrix_heatmap.png)
+
+#### Word Embeddings
+
+Another approach is to examine the word embeddings of the text in order to determine relationships between the terms (tokens) within the data. Word2Vec is a popular algorithm used for generating dense vector representations of words in large corpora using unsupervised learning. The resulting vectors have been shown to capture semantic relationships between the corresponding words and are used extensively for many downstream natural language processing (NLP) tasks like sentiment analysis, named entity recognition and machine translation.
+
+
+
 
 
 
