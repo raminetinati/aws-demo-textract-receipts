@@ -308,6 +308,59 @@ From our results, we're seeing some overlap between categories, and with some re
 
 Another approach is to examine the word embeddings of the text in order to determine relationships between the terms (tokens) within the data. Word2Vec is a popular algorithm used for generating dense vector representations of words in large corpora using unsupervised learning. The resulting vectors have been shown to capture semantic relationships between the corresponding words and are used extensively for many downstream natural language processing (NLP) tasks like sentiment analysis, named entity recognition and machine translation.
 
+For our Word Embeddings approach, we're going to be using Amazon SageMaker's built-in BlazingText algorithm, which is a highly optimized implementations of the Word2vec and text classification algorithms. The Word2vec algorithm is useful for many downstream natural language processing (NLP) tasks, such as sentiment analysis, named entity recognition, machine translation, etc. Text classification is an important task for applications that perform web searches, information retrieval, ranking, and document classification.
+
+For more information about blazingtext check this [out](https://docs.aws.amazon.com/sagemaker/latest/dg/blazingtext.html)
+
+To start things of, we need to transform our tokens in each of the individual records, into one large corpus. It;s important to rememeber that techniques such as Word2Vec relies on the ordering or neighbouring of terms when constructing our embeddings. This is problematic in our case as we're dealing with terms which first, are based on OCR documents, and secondly come from different document sources (e.g. 200 receipts). 
+
+Once we have converted our data sources into a single larger corpus of words, we can then upload this dataset to Amazon S3 in order to make it accessible to the SageMaker distributed training environment. Both these operations can be found in the `prep_data_form_sagemaker_training` and `upload_corpus_to_s3` methods.
+
+In our example, our data contains the following characters and tokens:
+
+```sh
+Total Corpus Size: 8956 Tokens
+Total Char Size: 44707 
+```
+
+Once the data has been uploaded to S3, we're now ready to set up our BlazingText estimators, configure our hyperparameters, and finally, fit the model with our data.
+
+Let's look at our hyperparameters to understand how they affect the word embeddings, or more specifically, the vectors which are generated.
+
+- mode: there are three modes of operation, `batch_skipgram`, `skipgram`, and `cbow`, and `supervised`. As we're working with an unsupervised exercise, only the first three apply. In the continuous bag-of-words (cbow) model, the distributed representations of surrounding words are used to predict the word in the middle, where as in the skip gram model, the distributed representation of the input word is used to predict the surrounding words. depending on the task. With small amounts of training data, skip-grams is useful and also can identify rare tokens. CBOW trains faster, however tends to provide better results for more frequeny words.
+- negative_sampling: Negative samping helps us reduce the overheads required during the backpropagation process of calculating the weights in the hidden layers. When using Negative sampling, rather than trying to predict whether the words are neighbours with each other from the entire corpus (or batch), we are trying to predict whether the are neighours or not. this reduces a multi-class classification into a simple binary classification problem. The Negative sampling hyperparameter should be relatively small, as this represents the words we want to use to perform this sampling with.
+- sampling_threshold: The threshold for the occurrence of words. Words that appear with higher frequency in the training data are randomly down-sampled. A solution to this is to learn representations for character n-grams, and to represent word vectors as the sum of the character n-gram vectors. 
+- subwords: Generating word representations by assigning a distinct vector to each word has certain limitations. It can’t deal with out-of-vocabulary (OOV) words, that is, words that have not been seen during training. 
+- vector_dim: The dimension of the word vectors that the algorithm learns. the larger the dimension, the more information to be encoded, but the more computational intensive it is to train, and depending on the size of the dataset, may cause overfitting
+- window_size: The size of the Window of words before and after the given word that is included in the the training sample. Too large a window size increases computational complexity and training time, but you can encode more information in the embedding.
+
+
+**Examining Word Embeddings**
+
+Once our Estimator has finished training and we receive the *Training - Training image download completed* console output (either in the Notebook, or via the CloudWatch Log), we can now download the model output and analyze the vectors for each of the tokens in our corpus.
+
+In our `download_model_results` method, we download the `model.tar.gz`, and unpack it to obtain the `vectors.txt` file, which contains the word embedding vector per row, with the first item being the word, and the remaining values representing the vector:
+
+```sh
+taco 0.0092192 0.0054454 0.0066696 -0.0050105 0.0059397 0.0041924 -0.0078341 -0.0025056 -0.0079119 0.010425 -0.00047481 0.0051597 -0.0049918 -0.00048329 -0.0057122 0.0036435 -0.0062819 -0.0077396 0.0072904 -0.0081233 -0.0083645 0.0016377 0.0067209 -0.0036508 0.0020606 0.0069086 0.0004382 -0.0061685 -0.0085813 -0.005219 -0.0061322 0.0069978 -0.0048277 -0.0021832 0.0031358 0.005686 -0.0073542 -0.0055645 -0.0086518 0.0082839 -0.0067091 -0.00075713 -0.0039181 0.0045562 0.0083899 -0.0033674 -0.0021617 -0.009299 -0.0062261 0.0073503 -0.0060106 -0.0080302 -0.010424 0.006698 0.0034636 0.0015164 0.00071054 -0.00048818 0.00049011 -0.00096996 -0.0079532 -0.0041831 0.0096762 -0.0033468 0.004567 0.0032067 -0.0090634 -0.0053981 -0.0049772 0.007396 -0.0029137 0.0064661 0.0089717 -0.0092859 -0.0038706 -0.001873 0.0033165 -0.0076862 -0.0050478 -0.003313 0.005653 0.0051689 0.0029128 0.0098781 0.0066952 -0.0010713 -0.0080446 0.0021746 -0.0095138 0.0094954 0.00016551 -0.0013827 -0.006624 0.002024 -0.00068857 -0.00026832 -0.0084752 -0.00031594 -0.0055165 -0.0083072 
+```
+
+In order to visualize this vector data, we're going to use [t-SNE](https://scikit-learn.org/stable/modules/generated/sklearn.manifold.TSNE.html) which is a method to allow us to plot high-dimentionality data. Without side tracking too much, whenever we have high-dimentional data, we need to reduce our data down into features which are strong features representing our data points (e.g. feature reduction), which is often acheived by using Principle Component Analysis (PCA), or Singular Vector Decomposition (SVD).
+
+For our example, we apply PCA to reduce our vector space down to 2 components (`n_components=2`) in our `tsne` model, and then use the two dimensional vectors as representations of our Word embeddings. Finally, we can plot these vectors, and examine the associations between terms.
+
+![Word Embeddings](img/word_embeddings.png)
+
+As shown in the plot above, we can visually interpret that the 2D vector representation, words which are closer together share similarlity, compared to those which are far apart. Whilst this approach does have limitations with regards to it's usefulness with smaller datasets such as the receipts data, it does provide another tool to explore the similarity of words within the data from another perspective.
+
+### Making Use of the Results
+
+Now we're at a point where we can take the 
+
+
+## Summary
+
+
 
 
 
