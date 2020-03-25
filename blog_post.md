@@ -191,7 +191,7 @@ In the ```analyse_records``` method, a series of Macro level inspections on the 
 
 \Whilst these descriptive stats are quite rough and high-level, they provide some intuition on the processing pipeline we're building, and highlight any major flaws or errors in our steps. Using this visual inspection of the data, we can also refine the dictionary of stop words.
 
-Take for example the output below, we can see that from the top 10 common words, there are perhaps futher processing steps required to ensure that we don't have duplicate terms like `0.00` and `$0.00`, or that we need a more refined approach to select the dates, given that there are only 200 records, and we have 211 dates in our table.
+Take for example the output below, we can see that from the top 10 common words, there are perhaps futher processing steps required to ensure that we don't have duplicate terms like `0.00` and `$0.00`, or that we need a more refined approach to select the dates, given that there are only 200 records, and we have 211 dates in our table. Again, this is where an iterative approach will pay off, as refining our methods of analysis and pre-processing will allow us to obtain a refined dataset for a given usecase.
 
 ```sh
 Total Non-unique Tokens 7755
@@ -212,19 +212,92 @@ max    827.000000
 Total Dates Found 211
 ```
 
+#### Token Co-Occurence
+
+A simple, yet powerful method to derive insight into a group of documents is to use a term co-occrence matrix to calculate the co-occence of n-terms within and across documents. Take for instance the receipts data, we are able to perform simple word counting across documents, and show that *chicken* is a popular word on this. However, we also obtain terms such as *0.00*, which doesn't really provide us much value or insight (perhaps this could be useful for some uses cases). However, what if we were to examine the co-occrence of two (or n) terms within a given receipt, and then more broadly, the occurence of that across all documents. This starts to add more meaning to our analysis, no longer are we just observing *chicken* as a common word, but we may be able to see what commonly pairs with chicken, e.g. *chicken*, *watermelon*. From this, one outcome is that we now know something about the relationship between terms: which may be which items are being purchesed or sold with each other.
+
+In our notebook, the `token_coocurence` allows us to compute the count of combinations between n-terms, and then filter these terms to to a smaller list which is suitable for use in other analyses. A sample output of our term co-occurence looks like the following:
+
+```sh
+term_co-occurencer, count
+('parti', 'svrck'), 7
+('ice', 'tea'), 6
+('chicken', 'rice'), 5
+('new', 'york'), 5
+('settl', 'tender'), 4
+('diet', 'coke'), 4
+('avenu', 'side'), 4
+('acct', 'auth'), 4
+('mexican', 'chicken'), 4
+('custom', 'copi'), 4
+('ave', 'chicken'), 4
+```
+
+Using the output of this term co-occurence, we can now transform the data into a matrix representation, in order to start to explore whether the receipts maximum value (which has been calculated in the previous stage), can tell us something about the type of items which are being purchases within the receipts.
+
+In order to transform the data, we first need to implement a simple one-hot-encoding strategy to our receipts, whhich is effectively going to result in a very sparce matrix of receipts x terms, where 0 represents an item is not present, and 1 represent an item being present.
+
+For instance, say we have two receipts:
+
+- Receipt A. Items (Coffee, Cake, Chicken)
+- Receipt B. Items (Chicken, Salad, Water)
+
+Our new receipt-term matrix will look like the following:
+
+|           | Cake | Chicken | Coffee | Salad | Water |
+|-----------|------|---------|--------|-------|-------|
+| Recept_A  | 1    | 1       | 1      | 0     | 0     |
+| Receipt_B | 0    | 1       | 0      | 1     | 1     |
 
 
+As a result, we're going to end up with an extremely large sparse matrix of terms. In order to reduce the size, we're going to be using the output of the unique tokens from the `token_coocurence` method, as a filter for terms that we're going to include in our one-hot-encoded matrix. Thus, the parameters that we use for generating and filtering our term co-occurence is going to directly impact the one-hot-encoded matrix that we generate. 
+
+Once we have filtered the corpus of words against the co-occurence list, we then want to try and categorize our receipts based on the `max_value` which was generated in the earlier steps. we're going to make sume assumptions here, driven by the quartile values of the `max_value` values, as shown in the `analyse_records` method. The `cost_type` method below provides a method to label our receipts.
 
 
+```python
+def cost_type(x):
+        lower = 0
+        lower_thres = 30
+        mid_thresh = 67
+        
+        if x >= lower and x < lower_thres:
+            return 'low_cost'
+        if x > lower_thres and x < mid_thresh:
+            return 'medium_cost'
+        if x > mid_thresh:
+            return 'high_cost'
+```
+
+Using the above `cost_type` method in the `food_cost_analysis` method, we can now perform analysis at the label level, which will allow us to determine if the max_value of the receipt has any relationship with the type of items listed. Again, as this is a rough method to analyse the data, we're going to need some methods to filter the columsn in our matrix/dataframe. In order to do this, we can set a threshold parameter (`pct_not_empty`) to only keep columns where more than x percent of the rows have a value. 
+
+If we refer back to our previous example, say we have a threshold of 50%, then the example would be processed as follows:
 
 
+|           | Cake | Chicken | Coffee | Salad | Water |
+|-----------|------|---------|--------|-------|-------|
+| Recept_A  | 1    | 1       | 1      | 0     | 0     |
+| Receipt_B | 0    | 1       | 0      | 1     | 1     |
+| Receipt_C | 0    | 1       | 1      | 1     | 1     |
 
 
+Apply a threshold of 50% of rows being 1. Thus the column 'Cake' is dropped.
 
 
+|           | Chicken | Coffee | Salad | Water |
+|-----------|---------|--------|-------|-------|
+| Recept_A  | 1       | 1      | 0     | 0     |
+| Receipt_B | 1       | 0      | 1     | 1     |
+| Receipt_C | 1       | 1      | 1     | 1     |
 
 
+Using this approach, we're now able to examine the remaining terms from our different categories:
 
+|  Label      | Receipts| Columns| Common Terms | 
+|-------------|---------|--------|--------------|
+| high_cost   | 58      | 60      | 'asparagu', 'ave', 'avenu', 'beach', 'beef', 'blue', 'blvd', 'brussel', 'burger', 'cab', 'cake', 'chicken', 'chip', 'chop', 'coffe', 'coke', 'custom', 'diet', 'dinner', 'express', 'famili', 'filename', 'fish', 'garlic', 'glass', 'grand', 'grill', 'hous', 'jericho', 'label', 'margarita', 'med', 'mexican', 'new', 'onion', 'onlin', 'open', 'park', 'parti', 'pork', 'qti', 'quesadilla', 'red', 'reg', 'rib', 'rice', 'salad', 'salmon', 'see', 'shrimp', 'side', 'sirloin', 'steak', 'street', 'tea', 'top', 'west', 'white', 'wine', 'york'   |
+| medium_cost | 58      | 70      | 'ave', 'avenu', 'bacon', 'bbq', 'beach', 'beef', 'bread', 'burger', 'cafe', 'cake', 'chees', 'cheeseburg', 'chicken', 'chz', 'close', 'coffe', 'coke', 'combo', 'crab', 'cust', 'day', 'dinner', 'drive', 'fajita', 'filename', 'free', 'french', 'garlic', 'glass', 'grill', 'hamburg', 'hous', 'label', 'larg', 'lunch', 'mac', 'medium', 'mexican', 'new', 'onion', 'open', 'parti', 'pepper', 'pollo', 'ranch', 'red', 'reg', 'rice', 'salad', 'sarah', 'seafood', 'shrimp', 'side', 'small', 'soda', 'soup', 'special', 'spinach', 'steak', 'svrck', 'taco', 'take', 'tea', 'tel', 'tender', 'water', 'well', 'west', 'wing', 'www'   | 
+| low_cost    | 84      | 29     | 'acct', 'american', 'auth', 'beef', 'cafe', 'chees', 'chicken', 'chip', 'close', 'coffe', 'coke', 'drink', 'drive', 'egg', 'filename', 'free', 'french', 'hot', 'label', 'lunch', 'pay', 'purchas', 'roll', 'street', 'taco', 'take', 'tender', 'type', 'wing'    | 
 
 
 
