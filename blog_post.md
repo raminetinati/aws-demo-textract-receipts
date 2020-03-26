@@ -355,13 +355,21 @@ As shown in the plot above, we can visually interpret that the 2D vector represe
 
 ### Making Use of the Results
 
-Now we're at a point where we can take the 
+Now we're at a point where we use these analytical outputs in order to further develop our downstream pipeline for modelling, visualization, or RPA purposes. At the most primative, we can use these outputs to build indexes of our terms, structuring it in a way which can be searched, and returned a result of the original receipt with the associated filtered terms/words. 
 
+Taking this a step further, there are several use cases which we can now build, we coud start to build different types of models which assess the vocab or maxiumum value of a receipt, and detect whether they are outliers from our current dataset (on the assumption that the current dataset is the ground truth). If we think of this in the context of an employee expense submission system, using different outlier detection model trained for receipt categoires (e.g. Hotel Expenses Model vs Food Receipt Model), we would be able to provide an automated checkpoint for determining whether the uploaded receipt is associated with the given claim. Linking this back to providing value for the business, this automated checking process reduces human resources required to check the receipts, and also improves the overall user experience.
 
 ## Summary
 
+In this article we've learnt how to use Amazon Textract in order to build a Natural Language Processing pipeline and then how to enrich our data using common techniques such as Part-of-Speech tagging and Named Entity Recognition. We've learned how to develop and interpret different exploration toolings to inspect our data in order to gain insights into the enriched data, and then use these insights in order to refine our understanding of the data and outputs.
 
-to-dp
+Fianlly, one of the best ways to become familar with the techniques used in this article is to take the code provided, and implement your own simple solution! 
+
+
+
+
+
+
 
 
 
