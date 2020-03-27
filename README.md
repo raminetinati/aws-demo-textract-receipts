@@ -235,7 +235,7 @@ term_co-occurencer, count
 
 Using the output of this term co-occurrence, we can now transform the data into a matrix representation, in order to start to explore whether the receipts maximum value (which has been calculated in the previous stage), can tell us something about the type of items which are being purchases within the receipts.
 
-In order to transform the data, we first need to implement a simple one-hot-encoding strategy to our receipts, which is effectively going to result in a very sparse matrix of receipts x terms, where 0 represents an item is not present, and 1 represent an item being present.
+In order to transform the data, we first need to implement a simple one-hot-encoding strategy to our receipts, which is effectively going to result in a very sparse matrix of receipts x terms, where 0 represents an item is not present, and 1 represent an item being present. If you're familar with TF-IDF, then this operation will mimic the Term-Frequency matrix, however, due to the context of our domain, we will only be looking at unique terms, rather than counts of terms.
 
 For instance, say we have two receipts:
 
